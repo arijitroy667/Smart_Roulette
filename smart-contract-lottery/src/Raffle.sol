@@ -36,10 +36,12 @@ contract Raffle is VRFConsumerBaseV2Plus {
     event RaffleEntered(address indexed player);
     event WinnerPicked(address indexed winner);
     event RequestedRaffleWinner(uint256 indexed requestId);
+    event RaffleToggled(bool indexed raffleStatus);
 
     /** Errors */
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__TransferFailed();
+    error Raffle__FeeTransferFailed();
     error Raffle__RaffleNotOpen();
     error Raffle__UpkeepNotNeeded(
         uint256 balance,
@@ -54,17 +56,25 @@ contract Raffle is VRFConsumerBaseV2Plus {
     }
 
     /* State variables */
+    bool private raffleStatus = true; // true means raffle is open, false means closed
     uint32 private constant NUM_WORDS = 1;
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint256 private immutable i_subscriptionId;
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
     uint256 private s_lastTimeStamp;
+    uint256 private raffleFee = 500; // 5% fee for the raffle
     address payable[] private s_players;
     address private s_recentWinner;
+    address private raffleOwner;
     bytes32 private immutable i_keyHash;
     uint32 private i_callbackGasLimit;
     RaffleState private s_raffleState;
+
+    modifier onlyRaffleOwner() {
+        require(msg.sender == raffleOwner, "Only owner can call this function");
+        _;
+    }
 
     /* Functions */
     constructor(
@@ -82,6 +92,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
         s_raffleState = RaffleState.OPEN;
+        raffleOwner = msg.sender; // Set the contract deployer as the owner
     }
 
     function enterRaffle() external payable {
@@ -114,8 +125,13 @@ contract Raffle is VRFConsumerBaseV2Plus {
         bool timePassed = ((block.timestamp - s_lastTimeStamp) >= i_interval);
         bool isOpen = (RaffleState.OPEN == s_raffleState);
         bool hasBalance = (address(this).balance > 0);
-        bool hasPlayers = (s_players.length > 0);
-        upkeepNeeded = (timePassed && isOpen && hasBalance && hasPlayers);
+        bool hasPlayers = (s_players.length > 1);
+        bool isRaffleOpen = raffleStatus;
+        upkeepNeeded = (timePassed &&
+            isOpen &&
+            hasBalance &&
+            hasPlayers &&
+            isRaffleOpen);
         return (upkeepNeeded, "");
     }
 
@@ -179,8 +195,18 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_lastTimeStamp = block.timestamp;
         emit WinnerPicked(recentWinner);
 
+        // Fee calculation
+        uint256 fee = (address(this).balance * raffleFee) / 10000; // 5% fee currently
+        uint256 winnerAmount = address(this).balance - fee;
+
+        // Transfer fee to owner
+        (bool feesuccess, ) = raffleOwner.call{value: fee}("");
+        if (!feesuccess) {
+            revert Raffle__FeeTransferFailed();
+        }
+
         // Interactions (External contract interaction)
-        (bool success, ) = recentWinner.call{value: address(this).balance}("");
+        (bool success, ) = recentWinner.call{value: winnerAmount}("");
         if (!success) {
             revert Raffle__TransferFailed();
         }
@@ -196,5 +222,19 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
     function getRecentWinner() external view returns (address) {
         return s_recentWinner;
+    }
+
+    function toggleRaffle() external onlyRaffleOwner returns (bool) {
+        !(raffleStatus);
+        emit RaffleToggled(raffleStatus);
+        return raffleStatus;
+    }
+
+    function getRaffleFee() external view returns (uint256) {
+        return raffleFee;
+    }
+
+    function setRaffleFee(uint256 newRaffleFee) external onlyRaffleOwner {
+        raffleFee = newRaffleFee;
     }
 }
