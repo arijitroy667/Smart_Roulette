@@ -82,4 +82,3 @@ contract DeployRaffleScript is Script {
     }
 }
 
-// forge script script/DeployRaffle.s.sol --rpc-url https://eth-sepolia.g.alchemy.com/v2/NZ1c4Vu21IOmBWCLeIe2oVMFLgLbfMLs --private-key cab0dd49ce7d3276aeecd2c7281ec62384f2419e5aae0f277b23c0035799ba9b --broadcast
