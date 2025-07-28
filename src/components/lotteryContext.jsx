@@ -9,7 +9,7 @@ export const LotteryContext = createContext();
 
 export const LotteryProvider = ({ children }) => {
   // Contract address - replace with your deployed contract address
-  const RAFFLE_CONTRACT_ADDRESS = "YOUR_DEPLOYED_CONTRACT_ADDRESS";
+  const RAFFLE_CONTRACT_ADDRESS = import.meta.env.VITE_RAFFLE_CONTRACT_ADDRESS;
 
   const { address: account, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -26,13 +26,22 @@ export const LotteryProvider = ({ children }) => {
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [contract, setContract] = useState(null);
 
+  const refreshRaffleState = async () => {
+    try {
+      const state = await contract.getRaffleState();
+      setRaffleState(Number(state));
+    } catch (err) {
+      console.error("Error refreshing raffle state:", err);
+    }
+  };
+
   // Initialize contract with walletClient (wagmi)
   useEffect(() => {
     if (!walletClient) return;
     const ethersProvider = new ethers.BrowserProvider(walletClient.transport);
     const contractInstance = new ethers.Contract(
       RAFFLE_CONTRACT_ADDRESS,
-      RaffleAbi.abi,
+      RaffleAbi,
       ethersProvider
     );
     setContract(contractInstance);
@@ -53,7 +62,7 @@ export const LotteryProvider = ({ children }) => {
 
         // Get raffle state
         const state = await contract.getRaffleState();
-        setRaffleState(state);
+        setRaffleState(Number(state));
 
         // Get recent winner if available
         try {
@@ -76,7 +85,7 @@ export const LotteryProvider = ({ children }) => {
         // Check if current user is admin
         if (account) {
           try {
-            const owner = await contract.raffleOwner?.();
+            const owner = await contract.raffleOwner();
             setIsAdmin(owner && owner.toLowerCase() === account.toLowerCase());
           } catch {
             setIsAdmin(false);
@@ -101,16 +110,18 @@ export const LotteryProvider = ({ children }) => {
     const setupEventListeners = () => {
       contract.on("RaffleEntered", (player) => {
         updatePlayers();
+        refreshRaffleState();
       });
 
       contract.on("WinnerPicked", (winner) => {
         setRecentWinner(winner);
         updatePlayers();
-        setRaffleState(0); // Back to OPEN
+        refreshRaffleState();
       });
 
       contract.on("RaffleToggled", (status) => {
         loadContractData();
+        refreshRaffleState();
       });
     };
 
@@ -225,7 +236,7 @@ export const LotteryProvider = ({ children }) => {
     const intervalId = setInterval(async () => {
       try {
         const state = await contract.getRaffleState();
-        setRaffleState(state);
+        setRaffleState(Number(state));
 
         // Update other dynamic data
         updatePlayers();

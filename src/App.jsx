@@ -1,6 +1,5 @@
 import { useState } from "react";
 import "./App.css";
-import { WalletProvider } from "./components/walletContext";
 import { LotteryProvider } from "./components/lotteryContext";
 import Navbar from "./components/Navbar";
 import LotteryCard from "./components/LotteryCard";
@@ -11,13 +10,13 @@ import Footer from "./components/Footer";
 import "@rainbow-me/rainbowkit/styles.css";
 import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
-import { mainnet, polygon, optimism, arbitrum, base } from "wagmi/chains";
+import { sepolia } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
 const config = getDefaultConfig({
   appName: "My RainbowKit App",
   projectId: "d886168773f71705581e135b1d8104e8",
-  chains: [mainnet, polygon, optimism, arbitrum, base],
+  chains: [sepolia],
 });
 
 const queryClient = new QueryClient();
