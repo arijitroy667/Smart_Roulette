@@ -9,7 +9,7 @@ export const LotteryContext = createContext();
 
 export const LotteryProvider = ({ children }) => {
   // Contract address - replace with your deployed contract address
-  const RAFFLE_CONTRACT_ADDRESS = import.meta.env.VITE_RAFFLE_CONTRACT_ADDRESS;
+  const RAFFLE_CONTRACT_ADDRESS = "0x32444197a7e712eFf324A76422FBf328Ccbc5275";
 
   const { address: account, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
