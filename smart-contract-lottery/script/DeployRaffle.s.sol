@@ -64,8 +64,8 @@ contract DeployRaffleScript is Script {
         // Replace these with your actual values
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 60; // 1 min
-        address vrfCoordinator = 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
-        bytes32 gasLane = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
+        address vrfCoordinator = 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625;
+        bytes32 gasLane = 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c;
         uint256 subscriptionId = 81787179558202384890027558149273280504726303683096142177333900020626327861384;
         uint32 callbackGasLimit = 500000;
 
